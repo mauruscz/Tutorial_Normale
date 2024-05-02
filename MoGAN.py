@@ -10,6 +10,8 @@ import torch
 import matplotlib.pyplot as plt
 plt.rcParams["figure.figsize"] = (12, 9) # (w, h)
 
+from tqdm import tqdm
+
 from sklearn.model_selection import train_test_split
 
 from random import sample
@@ -201,7 +203,7 @@ real_scores = np.zeros(n_epochs)
 fake_scores = np.zeros(n_epochs)
 
 
-for epoch in range(n_epochs):
+for epoch in tqdm(range(n_epochs)) :
     for i, imgs in enumerate(dataloader):
 
         # Adversarial ground truths vectors
@@ -249,6 +251,7 @@ for epoch in range(n_epochs):
         d_loss.backward()
         optimizer_D.step()
 
+        
         if epoch%10 == 0 and i == len(dataloader)-1:
             print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"

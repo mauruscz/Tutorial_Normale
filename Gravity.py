@@ -23,8 +23,8 @@ plt.rcParams["figure.figsize"] = (12, 9) # (w, h)
 
 #First arg CHI or NYC
 #Second arg Bike or Taxi
-city = sys.argv[1]
-transp = sys.argv[2]
+city = "NYC"
+transp = "Bike"
 
 
 #######------UTILS------#########

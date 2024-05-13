@@ -1,7 +1,6 @@
 import os
 import numpy as np
 
-from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch.nn as nn
 import torch

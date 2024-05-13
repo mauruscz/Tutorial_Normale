@@ -5,7 +5,6 @@ import numpy as np
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 import torch
 import matplotlib.pyplot as plt
 plt.rcParams["figure.figsize"] = (12, 9) # (w, h)
@@ -48,11 +47,12 @@ for filename in os.listdir(dir):
     if filename.endswith('.npy'):
         arrays.append(np.load(dir + "/"+filename))
 
-v = arrays
-img_size = v[0].shape[1]
-v_train, v_test = train_test_split(v, test_size=0.2, random_state=42)
-v = v_train
-print(len(v_train), len(v_test), len(v))
+v_train, v_test = train_test_split(arrays, test_size=0.2, random_state=42)
+print("Training set length:", len(v_train))
+print("Test set length:", len(v_test))
+
+img_size = v_train[0].shape[1]
+
 
 cuda = True if torch.cuda.is_available() else False
 print(cuda)
@@ -79,7 +79,7 @@ class VectorialDataset(torch.utils.data.Dataset):
         return sample 
 
 
-training_set = VectorialDataset(input_data=v)
+training_set = VectorialDataset(input_data=v_train)
 dataloader = torch.utils.data.DataLoader(training_set, 
                                            batch_size=batch_size, 
                                            shuffle=True)
@@ -153,8 +153,6 @@ class Discriminator(nn.Module):
 
     def forward(self, img):
         out = self.model(img)
-        #print("imgshape" + str(img.shape))
-        #print("outshape" + str(out.shape))
         out = out.view(out.shape[0], -1)
         validity = self.adv_layer(out)
 

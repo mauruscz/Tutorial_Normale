@@ -1,4 +1,3 @@
-import sys
 import os
 import numpy as np
 
@@ -16,10 +15,9 @@ from sklearn.model_selection import train_test_split
 from random import sample
 import pickle
 
-n_epochs = 6000
+n_epochs = 4000
 batch_size = 146
-#n_epochs = 30
-#batch_size = 41
+
 
 lr = 0.0002
 b1 = 0.5
@@ -106,7 +104,8 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.init_size = img_size // 4
-        self.l1 = nn.Sequential(nn.Linear(latent_dim, 128 * self.init_size ** 2))
+        self.l1 = nn.Sequential(nn.Linear(latent_dim, 128 * self.init_size ** 2)) 
+        #fully connected layer, from latent_dim to 128 * init_size ** 2. Essentially, it is a reshaping of the input, one-dimensional tensor for each item in the batch.
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -126,6 +125,9 @@ class Generator(nn.Module):
     def forward(self, z):
         out = self.l1(z)
         out = out.view(out.shape[0], 128, self.init_size, self.init_size)
+        #from the reshaped input, we get a 4D tensor, 
+        #with the first dimension being the batch size, the second the number of channels (i.e. number of feature maps), and the third and fourth the height and width of the image.
+
         img = self.conv_blocks(out)
         return img
 
@@ -204,7 +206,7 @@ fake_scores = np.zeros(n_epochs)
 for epoch in tqdm(range(n_epochs)) :
     for i, imgs in enumerate(dataloader):
 
-        # Adversarial ground truths vectors
+        # Adversarial ground truths vectors. The length is the length of the batch.
         valid = Variable(Tensor(imgs.shape[0], 1).fill_(1.0), requires_grad=False)
         fake = Variable(Tensor(imgs.shape[0], 1).fill_(0.0), requires_grad=False)
 
@@ -224,6 +226,11 @@ for epoch in tqdm(range(n_epochs)) :
         gen_imgs = generator(z)
 
         # Loss measures generator's ability to fool the discriminator
+        # i.e. it wants the discriminator to think that the gen_imgs are real (valid)
+        # So it compares the output of the discriminator with the valid vector
+        # The lower the loss, the lower the cross-entropy between the output of the discriminator and the valid vector
+        # The more similar are the labels of gen_imgs and valid        
+        
         g_loss = adversarial_loss(discriminator(gen_imgs), valid)
 
         g_loss.backward()
@@ -236,8 +243,13 @@ for epoch in tqdm(range(n_epochs)) :
         optimizer_D.zero_grad()
 
         # Measure discriminator's ability to classify real from generated samples
+
+        #How much is the discriminator able to say that a real image is real?
         real_loss = adversarial_loss(discriminator(real_imgs), valid)
+        #How much is the discriminator able to say that a fake image is fake?
         fake_loss = adversarial_loss(discriminator(gen_imgs.detach()), fake)
+
+        #Let's take the average of the two losses
         d_loss = (real_loss + fake_loss) / 2
 
         #Accuracies
@@ -264,30 +276,54 @@ for epoch in tqdm(range(n_epochs)) :
         fake_scores[epoch] = fake_scores[epoch]*(i/(i+1.)) + fake_score.mean().data*(1./(i+1.))
 
 print("end")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #######------PLOTS------#########
 #######------#######------########
 #######------#######------########
 
-#Plot Losses
-plt.title("MoGAN-Training", size = 23, fontweight="bold")
-plt.plot(G_losses,label="Generator")
-plt.plot(D_losses,label="Discriminator")
-plt.xlabel("iterations", size = 23)
-plt.ylabel("loss", size = 23)
+# Plot Losses
+plt.figure(figsize=(12, 9))
+plt.title("MoGAN-Training", size=23, fontweight="bold")
+plt.plot(G_losses, label="Generator")
+plt.plot(D_losses, label="Discriminator")
+plt.xlabel("iterations", size=23)
+plt.ylabel("loss", size=23)
 plt.tick_params(labelsize=20)
 plt.legend(prop={'size': 21})
-plt.savefig("./" + transp + city + "/lossMoGAN.pdf")  
+plt.savefig("lossMoGAN.pdf")
 plt.show(block=False)
 
-#Plot Scores
-plt.title("MoGAN: Scores", size = 23, fontweight="bold")
+# Plot Scores
+plt.figure(figsize=(12, 9))
+plt.title("MoGAN: Scores", size=23, fontweight="bold")
 plt.plot(fake_scores, label='synthetic score')
-plt.plot(real_scores, label='real score')    
-plt.xlabel("epochs", size = 23)
-plt.ylabel("score", size = 23)
+plt.plot(real_scores, label='real score')
+plt.xlabel("epochs", size=23)
+plt.ylabel("score", size=23)
 plt.tick_params(labelsize=20)
 plt.legend(prop={'size': 18})
-plt.savefig("./" + transp + city + "/scoresMoGAN.pdf")
+plt.savefig("scoresMoGAN.pdf")
 plt.show(block=False)
 
 #######------Fake set and dump------#########
@@ -296,7 +332,7 @@ plt.show(block=False)
 
 
 fake_set = []
-t = Tensor(np.random.normal(0, 1, (batch_size,  latent_dim))) #instead of batch_size should be len(v_test), but depends on your GPU power.
+t = Tensor(np.random.normal(0, 1, (len(v_test),  latent_dim))) #instead of batch_size should be len(v_test), but depends on your GPU power.
 t = generator(t).cpu().detach().numpy()
 print(t.shape)
 
